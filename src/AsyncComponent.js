@@ -15,9 +15,6 @@ export default function asyncComponent(importComponent) {
     }
 
     componentWillMount() {
-      if (typeof window === 'undefined') {
-        return;
-      }
       if (this.state.Component === null) {
         importComponent().then(m => m.default).then(Component => {
           AsyncComponent.Component = Component;
