@@ -1,33 +1,44 @@
 import React from 'react';
-import {renderToString} from 'react-dom/server';
+import {renderToStaticMarkup, renderToString} from 'react-dom/server';
 import Loadable from 'react-loadable';
 import {getBundles} from 'react-loadable/webpack';
 import App from './src/components/App';
 
 // noinspection JSUnusedGlobalSymbols
-export default async ({assets, loadableStats}) => { // eslint-disable-line
-  // const context = {};
+export default (locals) => {
+
   const modules = [];
 
-  const app = (
+  const Application = (
       <Loadable.Capture report={moduleName => modules.push(moduleName)}>
         <App/>
       </Loadable.Capture>
   );
 
-  return await Loadable.preloadAll().then(() => {
-    const string = renderToString(app);
+  return Loadable.preloadAll().then(() => {
+    const app = renderToString(Application);
+    const assets = locals.assets;
+    const scripts = Object.keys(locals.assets).filter(key => assets[key].match(/\.js$/))
+    .map((key) => assets[key]);
 
-    const bundles = getBundles(loadableStats(), modules); // eslint-disable-line
-    console.log("module", modules);
+    const bundles = getBundles(locals.loadableStats(), modules)
+    .filter(bundle => bundle.file.endsWith('.js'))
+    .map((bundle) => `/${bundle.file}`);
+
     console.log("bundles", bundles);
-    return `<!DOCTYPE html>
-    <html>
-    <body>
-    ${string}
-    </body>
-    </html>
-    `;
+    console.log("scripts", scripts);
+
+    const markup = (
+        <html>
+        <body>
+        <div id="root" dangerouslySetInnerHTML={{__html: app}}/>
+        <script src={"static/js/bundle.js"}/>
+        {bundles.map((js) => <script src={js}/>)}
+        </body>
+        </html>
+    );
+
+    return `<!DOCTYPE html>${renderToStaticMarkup(markup)}`;
   });
 }
 

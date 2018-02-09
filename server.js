@@ -8,21 +8,18 @@ const config = require('./webpack.config');
 const compiler = webpack(config);
 const express = require('express');
 const app = express();
-const React = require('react');
 const PORT = 3000;
-
 
 app.use(webpackDevMiddleware(compiler, {
   // logLevel: 'silent',
   // publicPath: config.output.publicPath,
-  serverSideRender: true
+  // serverSideRender: true
 }));
-// app.use(webpackHotMiddleware(compiler, {
-//   log: false,
-// }));
+app.use(webpackHotMiddleware(compiler, {
+  log: false,
+}));
 
-
-app.listen(PORT, function() {
+app.listen(PORT, function () {
   console.log(chalk.cyan('Starting the development server...\n'));
   openBrowser('http://localhost:' + PORT);
 });
