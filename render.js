@@ -1,122 +1,53 @@
-import React from 'react';
+import React, {Fragment} from 'react';
+import chalk from 'chalk'
 import {renderToStaticMarkup, renderToString} from 'react-dom/server';
 import Loadable from 'react-loadable';
 import {getBundles} from 'react-loadable/webpack';
-import App from './src/components/App';
+import {StaticRouter} from 'react-router-dom'
+import App from './src/App';
 
+const error = chalk.bold.red;
 // noinspection JSUnusedGlobalSymbols
 export default (locals) => {
-
+  const context = {};
   const modules = [];
 
   const Application = (
       <Loadable.Capture report={moduleName => modules.push(moduleName)}>
-        <App/>
+        <StaticRouter location={locals.path} context={context}>
+          <App/>
+        </StaticRouter>
       </Loadable.Capture>
   );
 
   return Loadable.preloadAll().then(() => {
     const app = renderToString(Application);
-    const assets = locals.assets;
-    const scripts = Object.keys(locals.assets).filter(key => assets[key].match(/\.js$/))
-    .map((key) => assets[key]);
+    console.error(error("app"), error(app));
+    // const assets = locals.assets;
+    // const scripts = Object.keys(locals.assets).filter(key => assets[key].match(/\.js$/))
+    // .map((key) => assets[key]);
 
-    const bundles = getBundles(locals.loadableStats(), modules)
-    .filter(bundle => bundle.file.endsWith('.js'))
-    .map((bundle) => `/${bundle.file}`);
-
-    console.log("bundles", bundles);
-    console.log("scripts", scripts);
+    const chunks = getBundles(locals.loadableStats(), modules)
+    .filter(chunk => chunk.file.endsWith('.js'))
+    .map((chunk) => `/${chunk.file}`);
 
     const markup = (
         <html>
         <body>
-        <div id="root" dangerouslySetInnerHTML={{__html: app}}/>
+        <noscript>
+          You need to enable JavaScript to run this app.
+        </noscript>
+        <div id="root" dangerouslySetInnerHTML={{__html: app}}>
+        </div>
         <script src={"static/js/bundle.js"}/>
-        {bundles.map((js) => <script src={js}/>)}
+        {chunks.map((js, index) => <script key={index} src={js}/>)}
         </body>
         </html>
     );
-
     return `<!DOCTYPE html>${renderToStaticMarkup(markup)}`;
+  }).catch(err => {
+    console.error(error("Loadable"), error(err));
+    return "Loadable: " + err
   });
 }
 
-// const modules = [];
-// const assets = locals.assets;
-// const app =
-//     <Loadable.Capture report={moduleName => modules.push(moduleName)}>
-//       {/*<StaticRouter location={locals.path} context={context}>*/}
-//       <App/>
-//       {/*</StaticRouter>*/}
-//     </Loadable.Capture>;
-// const APP = renderToString(app);
-//
-// // const bundles = getBundles(locals.loadableStats(), modules);
-//
-// const scripts = Object.keys(locals.assets).filter(key => assets[key].match(/\.js$/))
-//     .map((key) => assets[key]);
-// // const bundleJs = bundles.filter(bundle => bundle.file.endsWith('.js'))
-// //     .map((bundle) => `/${bundle.file}`);
-//
-//
-// const HTML = `
-//     <html lang="en">
-//     <head>
-//       <link rel="stylesheet"
-//             href="//fonts.googleapis.com/css?family=Roboto+Mono:400,500|Roboto:400,500|Material+Icons"/>
-//       <title>Server render</title>
-//       <meta charSet="UTF-8"/>
-//       <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-//     </head>
-//     <body>
-//     <div id="root">
-//       ${APP}
-//     </div>
-//     </body>
-//     </html>
-// `;
-//     // ${scripts.map((script) => `<script src="${script}"></script>`)}
-//     // ${bundleJs.map((js) => `<script src="${js}"></script>`)}
-//
-// // require("../static/js/0.chunk.js");
-// // const content = locals.webpackStats.compilation.assets['static/js/0.chunk.js'].source();
-// console.log("---------------LOGGER START---------------");
-// // console.log("APP", content);
-// console.log("scripts", scripts);
-// // console.log("modules", modules);
-// // console.log("bundles", bundles);
-// // console.log("bundleJS", bundleJs);
-// console.log("\n-------------LOGGER ENDED---------------\n");
-//
-//
-// // await require.ensure(['./static/js/0.chunk.js'], function(require) {
-// //   console.log(require)
-// //
-// //   // Do something special...
-// // });
-//
-// // await Loadable.preloadAll().then(console.log("preload:ready"))
-// //     .catch(err => {
-// //       console.log("catch:preloadAll", err);
-// //     });
-// // Loadable.preloadAll().then(console.log("Loadable.preloadAll()", "then()"))
-// //     .then(callback(null, APP));
-// // Promise.all(Loadable.preloadAll());
-// // await Loadable.preloadAll()
-// //     .catch(err => {
-// //       console.log("catch", err);
-// //     });
-//
-// return Promise.resolve()
-//     // .then(Loadable.preloadAll().then(console.log("preload:ready"))
-//     //     .catch(err => {
-//     //       console.log("catch", err);
-//     //     }))
-//     // .catch(err => {
-//     //   console.log(err);
-//     // })
-//     .then(() => HTML)
-//     .catch(err => {
-//       console.log("catch", err);
-//     });

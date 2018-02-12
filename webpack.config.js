@@ -10,7 +10,7 @@ const REACT_LOADABLE_PLUGIN = new (require('react-loadable/webpack').ReactLoadab
 });
 
 const STATIC_SITE_GENERATOR_PLUGIN = new (require('static-site-generator-webpack-plugin'))({
-  crawl: false,
+  crawl: true,
   paths: [
     '/',
   ],

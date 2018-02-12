@@ -4,7 +4,7 @@ import express from 'express';
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
 import Loadable from 'react-loadable';
-import App from './src/components/App';
+import App from './src/App';
 
 const PORT = 3000;
 
