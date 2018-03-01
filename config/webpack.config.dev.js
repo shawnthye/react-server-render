@@ -1,30 +1,32 @@
+const autoprefixer = require('autoprefixer');
 const path = require('path');
 const paths = require('./paths');
 const webpack = require('webpack');
 const eslintFormatter = require('react-dev-utils/eslintFormatter');
 const WatchMissingNodeModulesPlugin = require('react-dev-utils/WatchMissingNodeModulesPlugin');
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
 
-const LOADABLE_JSON_PATH = path.resolve(__dirname, '.tmp', 'react-loadable.json');
 const REACT_LOADABLE_PLUGIN = new (require('react-loadable/webpack').ReactLoadablePlugin)({
-  filename: LOADABLE_JSON_PATH
+  filename: paths.loadableJson
 });
 
 const STATIC_SITE_GENERATOR_PLUGIN = new (require('static-site-generator-webpack-plugin'))({
   crawl: true,
-  paths: [
-    '/',
-  ],
+  paths: ['/'],
   locals: {
-    loadableStats: () => require(LOADABLE_JSON_PATH)
+    loadableStats: () => require(paths.loadableJson)
   }
 });
 
+const publicPath = '/';
+
 const APPLICATION = {
-  name: "app",
+  name: "bundle.js",
   // You may want 'eval' instead if you prefer to see the compiled output in DevTools.
   // See the discussion in https://github.com/facebookincubator/create-react-app/issues/343.
-  devtool: 'source-map',
+  devtool: 'cheap-module-source-map',
   entry: [
+    require.resolve('./polyfills'),
     'webpack-hot-middleware/client?name=app&path=/__webpack_hmr&reload=true',
     paths.appIndexJs
   ],
@@ -36,7 +38,9 @@ const APPLICATION = {
     filename: 'static/js/bundle.js',
     // There are also additional JS chunk files if you use code splitting.
     chunkFilename: 'static/js/[name].chunk.js',
-    publicPath: '/',
+    publicPath: publicPath,
+    devtoolModuleFilenameTemplate: info =>
+        path.resolve(info.absoluteResourcePath).replace(/\\/g, '/'),
   },
   module: {
     strictExportPresence: true,
@@ -53,31 +57,61 @@ const APPLICATION = {
             loader: require.resolve('eslint-loader'),
           },
         ],
-        include: [paths.appRenderJs, paths.appSrc],
+        include: [paths.appSrc],
       },
       {
         oneOf: [
           // Process JS with Babel.
           {
             test: /\.(js|jsx|mjs)$/,
-            include: [paths.appSrc, paths.appRenderJs],
+            include: [paths.appSrc],
             loader: require.resolve('babel-loader'),
             options: {
               plugins: [
-                require.resolve('react-loadable/babel'),
-                // require.resolve('loadable-components/babel'),
-                // 'transform-class-properties',
-                // require.resolve('babel-plugin-syntax-dynamic-import'),
-                // require.resolve('babel-plugin-dynamic-import-node-sync'),
-                // require.resolve('babel-plugin-dynamic-import-node'),
-                // require.resolve('babel-plugin-dynamic-import-webpack'),
-                // require.resolve('babel-plugin-transform-ensure-ignore'),
+                require.resolve('react-loadable/babel')
               ],
               // This is a feature of `babel-loader` for webpack (not Babel itself).
               // It enables caching results in ./node_modules/.cache/babel-loader/
               // directory for faster rebuilds.
-              // cacheDirectory: true,
+              cacheDirectory: true
             },
+          },
+          // "postcss" loader applies autoprefixer to our CSS.
+          // "css" loader resolves paths in CSS and adds assets as dependencies.
+          // "style" loader turns CSS into JS modules that inject <style> tags.
+          // In production, we use a plugin to extract that CSS to a file, but
+          // in development "style" loader enables hot editing of CSS.
+          {
+            test: /\.css$/,
+            use: [
+              require.resolve('style-loader'),
+              {
+                loader: require.resolve('css-loader'),
+                options: {
+                  importLoaders: 1,
+                },
+              },
+              {
+                loader: require.resolve('postcss-loader'),
+                options: {
+                  // Necessary for external CSS imports to work
+                  // https://github.com/facebookincubator/create-react-app/issues/2677
+                  ident: 'postcss',
+                  plugins: () => [
+                    require('postcss-flexbugs-fixes'),
+                    autoprefixer({
+                      browsers: [
+                        '>1%',
+                        'last 4 versions',
+                        'Firefox ESR',
+                        'not ie < 9', // React doesn't support IE8 anyway
+                      ],
+                      flexbox: 'no-2009',
+                    }),
+                  ],
+                },
+              },
+            ],
           },
         ]
       }
@@ -93,9 +127,7 @@ const APPLICATION = {
 };
 
 const STATIC = {
-  name: 'server',
-  // You may want 'eval' instead if you prefer to see the compiled output in DevTools.
-  // See the discussion in https://github.com/facebookincubator/create-react-app/issues/343.
+  name: 'server.js',
   target: "node",
   entry: [
     paths.appRenderJs
@@ -144,15 +176,55 @@ const STATIC = {
               cacheDirectory: true,
             },
           },
+          // "postcss" loader applies autoprefixer to our CSS.
+          // "css" loader resolves paths in CSS and adds assets as dependencies.
+          // "style" loader turns CSS into JS modules that inject <style> tags.
+          // In production, we use a plugin to extract that CSS to a file, but
+          // in development "style" loader enables hot editing of CSS.
+          {
+            test: /\.css$/,
+            use: ExtractTextPlugin.extract({
+              fallback: "style-loader",
+              use: [
+                {
+                  loader: require.resolve('css-loader'),
+                  options: {
+                    importLoaders: 1,
+                  },
+                },
+                {
+                  loader: require.resolve('postcss-loader'),
+                  options: {
+                    // Necessary for external CSS imports to work
+                    // https://github.com/facebookincubator/create-react-app/issues/2677
+                    ident: 'postcss',
+                    plugins: () => [
+                      require('postcss-flexbugs-fixes'),
+                      autoprefixer({
+                        browsers: [
+                          '>1%',
+                          'last 4 versions',
+                          'Firefox ESR',
+                          'not ie < 9', // React doesn't support IE8 anyway
+                        ],
+                        flexbox: 'no-2009',
+                      }),
+                    ],
+                  },
+                }
+              ]
+            })
+          },
         ]
       }
     ]
   },
   plugins: [
     STATIC_SITE_GENERATOR_PLUGIN,
-    new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/),
+    new ExtractTextPlugin({filename: '[name].css'}),
     new webpack.NamedModulesPlugin(),
-    new WatchMissingNodeModulesPlugin(paths.appNodeModules)
+    new WatchMissingNodeModulesPlugin(paths.appNodeModules),
+    new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/)
   ]
 };
 
