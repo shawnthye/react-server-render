@@ -3,7 +3,7 @@ const path = require('path');
 const paths = require('./paths');
 const webpack = require('webpack');
 const eslintFormatter = require('react-dev-utils/eslintFormatter');
-const WatchMissingNodeModulesPlugin = require('react-dev-utils/WatchMissingNodeModulesPlugin');
+// const WatchMissingNodeModulesPlugin = require('react-dev-utils/WatchMissingNodeModulesPlugin');
 const ExtractTextPlugin = require("extract-text-webpack-plugin");
 
 const REACT_LOADABLE_PLUGIN = new (require('react-loadable/webpack').ReactLoadablePlugin)({
@@ -22,6 +22,7 @@ const publicPath = '/';
 
 const APPLICATION = {
   name: "bundle.js",
+  mode: 'development',
   // You may want 'eval' instead if you prefer to see the compiled output in DevTools.
   // See the discussion in https://github.com/facebookincubator/create-react-app/issues/343.
   devtool: 'cheap-module-source-map',
@@ -121,13 +122,14 @@ const APPLICATION = {
     REACT_LOADABLE_PLUGIN,
     new webpack.NamedModulesPlugin(),
     new webpack.HotModuleReplacementPlugin(),
-    new WatchMissingNodeModulesPlugin(paths.appNodeModules),
+    // new WatchMissingNodeModulesPlugin(paths.appNodeModules),
     new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/),
   ]
 };
 
 const STATIC = {
   name: 'server.js',
+  mode: 'development',
   target: "node",
   entry: [
     paths.appRenderJs
@@ -223,7 +225,7 @@ const STATIC = {
     STATIC_SITE_GENERATOR_PLUGIN,
     new ExtractTextPlugin({filename: '[name].css'}),
     new webpack.NamedModulesPlugin(),
-    new WatchMissingNodeModulesPlugin(paths.appNodeModules),
+    // new WatchMissingNodeModulesPlugin(paths.appNodeModules),
     new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/)
   ]
 };

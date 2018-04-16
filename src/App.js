@@ -18,7 +18,7 @@ export default class App extends Component {
   render() {
     return (
         <Fragment>
-          <Link to="/">AR</Link><br/>
+          <Link to="/">ARA</Link><br/>
           <Link to="/example2">BB</Link>
 
           <Switch>
